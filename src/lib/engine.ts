@@ -230,24 +230,33 @@ export async function addProjectItem(
   itemName: string
 ) {
   const itemId = crypto.randomUUID();
+  console.log("[addProjectItem] Adding:", { projectId, itemName, itemId });
 
   // Find next order_index in project
-  const { data: lastItem } = await supabase
+  const { data: lastItem, error: fetchError } = await supabase
     .from("project_items")
     .select("order_index")
     .eq("project_id", projectId)
     .order("order_index", { ascending: false })
     .limit(1);
 
+  if (fetchError) console.error("[addProjectItem] Fetch order error:", fetchError);
+
   const nextOrder = (lastItem?.[0]?.order_index ?? -1) + 1;
 
-  await supabase.from("project_items").insert({
+  const { error } = await supabase.from("project_items").insert({
     item_id: itemId,
     project_id: projectId,
     item_name: itemName,
     is_active: false,
     order_index: nextOrder,
   });
+
+  if (error) {
+    console.error("[addProjectItem] INSERT FAILED:", error.message, error.details, error.hint);
+  } else {
+    console.log("[addProjectItem] SUCCESS:", itemName);
+  }
 
   return itemId;
 }
