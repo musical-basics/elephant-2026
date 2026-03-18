@@ -73,6 +73,11 @@ export default function AddItemModal({ onClose }: AddItemModalProps) {
           placeholder="What needs to be done?"
           value={itemName}
           onChange={(e) => setItemName(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && itemName.trim() && (itemType === "errand" || selectedProject)) {
+              handleSubmit();
+            }
+          }}
           autoFocus
           style={{ marginBottom: "0.75rem" }}
         />
