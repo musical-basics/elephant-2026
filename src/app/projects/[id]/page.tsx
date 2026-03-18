@@ -288,7 +288,11 @@ export default function EditProjectPage() {
             onKeyDown={(e) => e.key === "Enter" && handleAddItem()}
           />
           <button
-            onClick={handleAddItem}
+            type="button"
+            onClick={() => {
+              console.log("[EditProject] + clicked, newItemName:", newItemName);
+              handleAddItem();
+            }}
             style={{
               background: "var(--gold)",
               border: "none",
