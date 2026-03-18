@@ -8,6 +8,11 @@
 
 CREATE SCHEMA IF NOT EXISTS elephant;
 
+-- Grant access to Supabase roles
+GRANT USAGE ON SCHEMA elephant TO service_role, authenticated, anon;
+GRANT ALL ON ALL TABLES IN SCHEMA elephant TO service_role, authenticated, anon;
+ALTER DEFAULT PRIVILEGES IN SCHEMA elephant GRANT ALL ON TABLES TO service_role, authenticated, anon;
+
 -- ─── Table: projects ─────────────────────────────────────────────────────────
 
 CREATE TABLE elephant.projects (
