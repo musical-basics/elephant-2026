@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import NavHeader from "@/components/NavHeader";
+import CreateProjectModal from "@/components/CreateProjectModal";
 import { fetchProjects } from "@/lib/engine";
 import { formatDate } from "@/lib/dateUtils";
 import type { Project } from "@/types";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, FolderPlus } from "lucide-react";
 
 type SortBy = "priority" | "alpha";
 
@@ -15,14 +16,19 @@ export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [sortBy, setSortBy] = useState<SortBy>("priority");
   const [loading, setLoading] = useState(true);
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
-  useEffect(() => {
+  const loadProjects = useCallback(() => {
     setLoading(true);
     fetchProjects(activeTab).then((data) => {
       setProjects(data);
       setLoading(false);
     });
   }, [activeTab]);
+
+  useEffect(() => {
+    loadProjects();
+  }, [loadProjects]);
 
   const sorted = [...projects].sort((a, b) => {
     if (sortBy === "priority") return b.priority - a.priority;
@@ -61,6 +67,16 @@ export default function ProjectsPage() {
             A → Z
           </button>
         </div>
+
+        {/* Add Project Button */}
+        <button
+          className="btn-primary"
+          onClick={() => setShowCreateModal(true)}
+          style={{ width: "100%", marginBottom: "1rem", justifyContent: "center" }}
+        >
+          <FolderPlus size={18} style={{ color: "var(--gold)" }} />
+          Create New Project
+        </button>
 
         {/* Project List */}
         {loading ? (
@@ -104,6 +120,13 @@ export default function ProjectsPage() {
           </div>
         )}
       </div>
+
+      {showCreateModal && (
+        <CreateProjectModal
+          onClose={() => setShowCreateModal(false)}
+          onCreated={() => loadProjects()}
+        />
+      )}
     </div>
   );
 }

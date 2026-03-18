@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import { addErrand, addProjectItem, fetchProjects } from "@/lib/engine";
+import CreateProjectModal from "@/components/CreateProjectModal";
 import type { Project } from "@/types";
 
 interface AddItemModalProps {
@@ -15,6 +16,7 @@ export default function AddItemModal({ onClose }: AddItemModalProps) {
   const [selectedProject, setSelectedProject] = useState("");
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(false);
+  const [showCreateProject, setShowCreateProject] = useState(false);
 
   useEffect(() => {
     fetchProjects("active").then(setProjects);
@@ -84,19 +86,40 @@ export default function AddItemModal({ onClose }: AddItemModalProps) {
 
         {/* Project Selector (only for project items) */}
         {itemType === "project" && (
-          <select
-            className="input"
-            value={selectedProject}
-            onChange={(e) => setSelectedProject(e.target.value)}
-            style={{ marginBottom: "0.75rem" }}
-          >
-            <option value="">Select a project...</option>
-            {projects.map((p) => (
-              <option key={p.projectId} value={p.projectId}>
-                {p.projectName} (Priority {p.priority})
-              </option>
-            ))}
-          </select>
+          <>
+            <select
+              className="input"
+              value={selectedProject}
+              onChange={(e) => {
+                if (e.target.value === "__create__") {
+                  setShowCreateProject(true);
+                  setSelectedProject("");
+                } else {
+                  setSelectedProject(e.target.value);
+                }
+              }}
+              style={{ marginBottom: "0.75rem" }}
+            >
+              <option value="">Select a project...</option>
+              <option value="__create__">＋ Create New Project</option>
+              {projects.map((p) => (
+                <option key={p.projectId} value={p.projectId}>
+                  {p.projectName} (Priority {p.priority})
+                </option>
+              ))}
+            </select>
+
+            {showCreateProject && (
+              <CreateProjectModal
+                onClose={() => setShowCreateProject(false)}
+                onCreated={(projectId) => {
+                  setSelectedProject(projectId);
+                  setShowCreateProject(false);
+                  fetchProjects("active").then(setProjects);
+                }}
+              />
+            )}
+          </>
         )}
 
         {/* Submit */}
