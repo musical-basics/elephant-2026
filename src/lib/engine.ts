@@ -205,8 +205,9 @@ export async function takeABite(
 export async function addErrand(itemName: string) {
   const itemId = crypto.randomUUID();
   const newIndex = await getNextMlpIndex();
+  console.log("[addErrand] Inserting errand:", { itemId, itemName, newIndex });
 
-  await supabase.from("master_list").insert({
+  const { error } = await supabase.from("master_list").insert({
     mlp_index: newIndex,
     item_id: itemId,
     item_name: itemName,
@@ -214,6 +215,12 @@ export async function addErrand(itemName: string) {
     project_id: null,
     is_placeholder: false,
   });
+
+  if (error) {
+    console.error("[addErrand] INSERT FAILED:", error.message, error.details, error.hint);
+  } else {
+    console.log("[addErrand] SUCCESS — inserted errand:", itemName);
+  }
 
   return itemId;
 }
@@ -317,12 +324,18 @@ export async function updateProjectItemOrder(
 // ─── Fetch Helpers ───────────────────────────────────────────────────────────
 
 export async function fetchTopItem(): Promise<MasterListItem | null> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("master_list")
     .select("*")
     .eq("is_placeholder", false)
     .order("mlp_index", { ascending: true })
     .limit(1);
+
+  console.log("[fetchTopItem] data:", data, "error:", error);
+
+  if (error) {
+    console.error("[fetchTopItem] QUERY FAILED:", error.message, error.details, error.hint);
+  }
 
   if (!data || data.length === 0) return null;
 
