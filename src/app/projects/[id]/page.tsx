@@ -10,19 +10,14 @@ import {
   updateProjectItemName,
   deleteProjectItem,
   addProjectItem,
-  updateProjectItemOrder,
   deleteProject,
 } from "@/lib/engine";
 import type { Project, ProjectItem } from "@/types";
-import { motion } from "framer-motion";
-import { DndContext, closestCenter, type DragEndEvent } from "@dnd-kit/core";
-import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Trash2, Plus } from "lucide-react";
+import { Trash2, Plus, Pencil, Check } from "lucide-react";
 
-// ─── Sortable Item Component ─────────────────────────────────────────────────
+// ─── Item Row Component ──────────────────────────────────────────────────────
 
-function SortableItem({
+function ItemRow({
   item,
   onRename,
   onDelete,
@@ -33,12 +28,6 @@ function SortableItem({
 }) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(item.itemName);
-  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: item.itemId });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
 
   const handleSave = () => {
     if (name.trim() && name.trim() !== item.itemName) {
@@ -48,37 +37,23 @@ function SortableItem({
   };
 
   return (
-    <div ref={setNodeRef} style={style} className="card" key={item.itemId}>
-      <motion.div
+    <div className="card" style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+      {/* Active Indicator */}
+      <div
         style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "0.5rem",
-          position: "relative",
+          width: "0.5rem",
+          height: "0.5rem",
+          borderRadius: "9999px",
+          background: item.isActive ? "var(--green)" : "var(--text-muted)",
+          opacity: item.isActive ? 1 : 0.3,
+          flexShrink: 0,
         }}
-        drag="x"
-        dragConstraints={{ left: -80, right: 0 }}
-        onDragEnd={(_, info) => {
-          if (info.offset.x < -60) onDelete(item.itemId);
-        }}
-      >
-        {/* Drag Handle */}
-        <div
-          {...attributes}
-          {...listeners}
-          style={{
-            cursor: "grab",
-            color: "var(--text-muted)",
-            touchAction: "none",
-            padding: "0.25rem",
-          }}
-        >
-          <GripVertical size={16} />
-        </div>
+      />
 
-        {/* Item Name */}
-        <div style={{ flex: 1 }}>
-          {editing ? (
+      {/* Item Name */}
+      <div style={{ flex: 1 }}>
+        {editing ? (
+          <div style={{ display: "flex", gap: "0.35rem" }}>
             <input
               className="input"
               value={name}
@@ -88,46 +63,60 @@ function SortableItem({
               autoFocus
               style={{ padding: "0.35rem 0.5rem", fontSize: "0.85rem" }}
             />
-          ) : (
-            <p
-              onClick={() => setEditing(true)}
+            <button
+              type="button"
+              onClick={handleSave}
               style={{
+                background: "none",
+                border: "none",
                 cursor: "pointer",
-                fontSize: "0.85rem",
-                fontWeight: 500,
+                color: "var(--green)",
+                padding: "0.25rem",
               }}
             >
-              {item.itemName}
-            </p>
-          )}
-        </div>
+              <Check size={14} />
+            </button>
+          </div>
+        ) : (
+          <p style={{ fontSize: "0.85rem", fontWeight: 500 }}>
+            {item.itemName}
+          </p>
+        )}
+      </div>
 
-        {/* Active Indicator */}
-        <div
-          style={{
-            width: "0.5rem",
-            height: "0.5rem",
-            borderRadius: "9999px",
-            background: item.isActive ? "var(--green)" : "var(--text-muted)",
-            opacity: item.isActive ? 1 : 0.3,
-          }}
-        />
-
-        {/* Delete */}
+      {/* Edit */}
+      {!editing && (
         <button
-          onClick={() => onDelete(item.itemId)}
+          type="button"
+          onClick={() => setEditing(true)}
           style={{
             background: "none",
             border: "none",
             cursor: "pointer",
-            color: "var(--red)",
-            opacity: 0.5,
+            color: "var(--text-muted)",
+            opacity: 0.6,
             padding: "0.25rem",
           }}
         >
-          <Trash2 size={14} />
+          <Pencil size={14} />
         </button>
-      </motion.div>
+      )}
+
+      {/* Delete */}
+      <button
+        type="button"
+        onClick={() => onDelete(item.itemId)}
+        style={{
+          background: "none",
+          border: "none",
+          cursor: "pointer",
+          color: "var(--red)",
+          opacity: 0.5,
+          padding: "0.25rem",
+        }}
+      >
+        <Trash2 size={14} />
+      </button>
     </div>
   );
 }
@@ -180,21 +169,11 @@ export default function EditProjectPage() {
   };
 
   const handleAddItem = async () => {
+    console.log("[EditProject] handleAddItem called, newItemName:", newItemName);
     if (!newItemName.trim()) return;
     await addProjectItem(projectId, newItemName.trim());
     setNewItemName("");
     loadData();
-  };
-
-  const handleDragEnd = async (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-
-    const oldIndex = items.findIndex((i) => i.itemId === active.id);
-    const newIndex = items.findIndex((i) => i.itemId === over.id);
-    const reordered = arrayMove(items, oldIndex, newIndex);
-    setItems(reordered);
-    await updateProjectItemOrder(projectId, reordered.map((i) => i.itemId));
   };
 
   const handleDeleteProject = async () => {
@@ -246,6 +225,7 @@ export default function EditProjectPage() {
           {([1, 2, 3, 4, 5] as const).map((p) => (
             <button
               key={p}
+              type="button"
               onClick={() => handleUpdateField("priority", p)}
               className={`priority-badge priority-${p}`}
               style={{
@@ -289,10 +269,7 @@ export default function EditProjectPage() {
           />
           <button
             type="button"
-            onClick={() => {
-              console.log("[EditProject] + clicked, newItemName:", newItemName);
-              handleAddItem();
-            }}
+            onClick={handleAddItem}
             style={{
               background: "var(--gold)",
               border: "none",
@@ -308,16 +285,18 @@ export default function EditProjectPage() {
           </button>
         </div>
 
-        {/* Draggable Item List */}
-        <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={items.map((i) => i.itemId)} strategy={verticalListSortingStrategy}>
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
-              {items.map((item) => (
-                <SortableItem key={item.itemId} item={item} onRename={handleRename} onDelete={handleDelete} />
-              ))}
+        {/* Item List */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
+          {items.map((item, i) => (
+            <div
+              key={item.itemId}
+              className="animate-fade-in"
+              style={{ animationDelay: `${i * 0.03}s`, opacity: 0 }}
+            >
+              <ItemRow item={item} onRename={handleRename} onDelete={handleDelete} />
             </div>
-          </SortableContext>
-        </DndContext>
+          ))}
+        </div>
 
         {items.length === 0 && (
           <div className="empty-state" style={{ padding: "2rem" }}>
@@ -327,6 +306,7 @@ export default function EditProjectPage() {
 
         {/* Delete Project */}
         <button
+          type="button"
           className="btn-danger"
           onClick={handleDeleteProject}
           style={{ width: "100%", marginTop: "2rem" }}
