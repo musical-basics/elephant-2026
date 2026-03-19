@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import NavHeader from "@/components/NavHeader";
+import Toast, { type ToastType } from "@/components/Toast";
 import {
   fetchProjectItems,
   fetchProjects,
@@ -132,6 +133,9 @@ export default function EditProjectPage() {
   const [items, setItems] = useState<ProjectItem[]>([]);
   const [newItemName, setNewItemName] = useState("");
   const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
+
+  const showToast = (message: string, type: ToastType = "success") => setToast({ message, type });
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -161,23 +165,28 @@ export default function EditProjectPage() {
   const handleRename = async (itemId: string, newName: string) => {
     await updateProjectItemName(itemId, newName);
     setItems((prev) => prev.map((i) => (i.itemId === itemId ? { ...i, itemName: newName } : i)));
+    showToast("✏️ Item renamed");
   };
 
   const handleDelete = async (itemId: string) => {
     await deleteProjectItem(itemId);
     setItems((prev) => prev.filter((i) => i.itemId !== itemId));
+    showToast("🗑️ Item deleted");
   };
 
   const handleAddItem = async () => {
-    console.log("[EditProject] handleAddItem called, newItemName:", newItemName);
-    if (!newItemName.trim()) return;
+    if (!newItemName.trim()) {
+      showToast("Please enter an item name first.", "warning");
+      return;
+    }
     try {
-      const result = await addProjectItem(projectId, newItemName.trim());
-      console.log("[EditProject] addProjectItem result:", result);
+      await addProjectItem(projectId, newItemName.trim());
+      showToast("✅ Item added!");
       setNewItemName("");
       await loadData();
     } catch (err) {
       console.error("[EditProject] addProjectItem FAILED:", err);
+      showToast("Failed to add item", "error");
     }
   };
 
@@ -290,6 +299,7 @@ export default function EditProjectPage() {
           </button>
         </div>
 
+
         {/* Item List */}
         <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
           {items.map((item, i) => (
@@ -320,6 +330,10 @@ export default function EditProjectPage() {
           Delete Project
         </button>
       </div>
+
+      {toast && (
+        <Toast message={toast.message} type={toast.type} onDone={() => setToast(null)} />
+      )}
     </div>
   );
 }
