@@ -1,0 +1,24 @@
+{
+  "output": {
+    "filePath": "elephant-repomix.xml",
+    "style": "xml"
+  },
+  "ignore": {
+    "useGitignore": true,
+    "useDefaultPatterns": true,
+    "customPatterns": [
+      "node_modules",
+      ".next",
+      ".git",
+      ".env*",
+      "pnpm-lock.yaml",
+      "next-env.d.ts",
+      ".DS_Store",
+      "AGENTS.md",
+      "implementation_plan.md",
+      "public/**",
+      "repomix-output.*",
+      "elephant-repomix.xml"
+    ]
+  }
+}

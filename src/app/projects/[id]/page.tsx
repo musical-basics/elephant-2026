@@ -171,9 +171,14 @@ export default function EditProjectPage() {
   const handleAddItem = async () => {
     console.log("[EditProject] handleAddItem called, newItemName:", newItemName);
     if (!newItemName.trim()) return;
-    await addProjectItem(projectId, newItemName.trim());
-    setNewItemName("");
-    loadData();
+    try {
+      const result = await addProjectItem(projectId, newItemName.trim());
+      console.log("[EditProject] addProjectItem result:", result);
+      setNewItemName("");
+      await loadData();
+    } catch (err) {
+      console.error("[EditProject] addProjectItem FAILED:", err);
+    }
   };
 
   const handleDeleteProject = async () => {
